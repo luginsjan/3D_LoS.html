@@ -1,615 +1,549 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bodenprofil Visualisierer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <meta charset="utf-8">
+    <title>Visualización 3D de Edificios - OpenStreetMap</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            margin: 0;
             padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #2c3e50, #3498db);
-            color: white;
-            padding: 30px;
+        h1 {
+            color: #333;
             text-align: center;
         }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .input-section {
-            margin-bottom: 40px;
-        }
-
-        .input-group {
-            margin-bottom: 30px;
-        }
-
-        .input-group h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 1.3em;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 5px;
-        }
-
-        .coordinate-inputs {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .input-field {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .input-field label {
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #34495e;
-        }
-
-        .input-field input {
-            padding: 12px;
-            border: 2px solid #bdc3c7;
+        #myDiv {
+            width: 100%;
+            height: 700px;
+            background: white;
             border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-
-        .input-field input:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .info {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stats {
+            display: inline-block;
+            margin: 0 20px;
+        }
+        .data-input {
+            margin: 20px auto;
+            max-width: 800px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
         textarea {
             width: 100%;
-            min-height: 150px;
-            padding: 15px;
-            border: 2px solid #bdc3c7;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            resize: vertical;
-            transition: all 0.3s ease;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
         }
-
-        textarea:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+        .load-btn {
+            background: #28a745;
+            margin-top: 10px;
         }
-
-        .button-group {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin: 30px 0;
+        .load-btn:hover {
+            background: #218838;
         }
-
-        .btn {
-            padding: 15px 30px;
-            border: none;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
-            color: white;
-        }
-
-        .btn-success {
-            background: linear-gradient(45deg, #27ae60, #229954);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .chart-container {
-            margin-top: 40px;
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .chart-wrapper {
-            position: relative;
-            height: 500px;
-            margin-top: 20px;
-        }
-
-        .info-panel {
-            background: #ecf0f1;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-
-        .info-item {
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
             background: white;
             padding: 15px;
             border-radius: 8px;
-            text-align: center;
-            border-left: 4px solid #3498db;
-        }
-
-        .info-item h4 {
-            color: #2c3e50;
-            margin-bottom: 5px;
-            font-size: 0.9em;
-            text-transform: uppercase;
-        }
-
-        .info-item span {
-            font-size: 1.4em;
-            font-weight: bold;
-            color: #3498db;
-        }
-
-        .error {
-            background: #e74c3c;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            display: none;
-        }
-
-        .success {
-            background: #27ae60;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            display: none;
-        }
-
-        @media (max-width: 768px) {
-            .content {
-                padding: 20px;
-            }
-            
-            .coordinate-inputs {
-                grid-template-columns: 1fr;
-            }
-            
-            .button-group {
-                flex-direction: column;
-            }
-            
-            .btn {
-                width: 100%;
-            }
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 12px;
+            max-width: 200px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🏔️ Bodenprofil Visualisierer</h1>
-            <p>Erstellen Sie interaktive 2D-Diagramme aus Geo-Koordinaten und Höhendaten</p>
+    <h1>🏢 Visualización 3D de Edificios - Ciudad de México</h1>
+    
+    <div class="data-input">
+        <h3>Cargar datos de n8n:</h3>
+        <textarea id="dataInput" placeholder='Pega aquí los datos JSON de n8n en el formato:
+{
+  "buildingsCount": 10,
+  "centerCoordinates": {"lat": 19.4326, "lon": -99.1332},
+  "plotData": {
+    "x": [100, 200, 300],
+    "y": [100, 200, 300],
+    "z": [0, 0, 0],
+    "heights": [50, 75, 100],
+    "labels": ["Edificio 1", "Edificio 2", "Edificio 3"],
+    "colors": [50, 75, 100]
+  }
+}'></textarea>
+        <br>
+        <button class="load-btn" onclick="loadData()">Cargar y Visualizar</button>
+        <button onclick="loadSampleData()">Cargar Datos de Ejemplo</button>
+    </div>
+    
+    <div class="info">
+        <div class="stats">
+            <strong>Edificios cargados:</strong> <span id="buildingCount">0</span>
         </div>
-
-        <div class="content">
-            <div class="input-section">
-                <div class="input-group">
-                    <h3>📍 Manuelle Koordinateneingabe</h3>
-                    <div class="coordinate-inputs">
-                        <div class="input-field">
-                            <label for="latitude">Breitengrad (Latitude)</label>
-                            <input type="number" id="latitude" step="0.000001" placeholder="z.B. 25.6505006">
-                        </div>
-                        <div class="input-field">
-                            <label for="longitude">Längengrad (Longitude)</label>
-                            <input type="number" id="longitude" step="0.000001" placeholder="z.B. -100.3509594">
-                        </div>
-                        <div class="input-field">
-                            <label for="elevation">Höhe (Meter)</label>
-                            <input type="number" id="elevation" step="0.1" placeholder="z.B. 617.23">
-                        </div>
-                    </div>
-                    <div class="button-group">
-                        <button class="btn btn-secondary" onclick="addPoint()">📍 Punkt Hinzufügen</button>
-                        <button class="btn btn-primary" onclick="createChart()">📊 Diagramm Erstellen</button>
-                        <button class="btn btn-secondary" onclick="clearPoints()">🗑️ Zurücksetzen</button>
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <h3>📋 JSON-Daten Eingabe</h3>
-                    <textarea id="jsonData" placeholder="Fügen Sie hier Ihre JSON-Daten ein (Format wie im Beispieldatensatz)..."></textarea>
-                    <div class="button-group">
-                        <button class="btn btn-success" onclick="loadSampleData()">📁 Beispieldaten Laden</button>
-                        <button class="btn btn-primary" onclick="parseJsonData()">🔄 JSON Verarbeiten</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="error" id="errorMessage"></div>
-            <div class="success" id="successMessage"></div>
-
-            <div class="chart-container" id="chartContainer" style="display: none;">
-                <h3>📈 Bodenprofil Diagramm</h3>
-                <div class="info-panel" id="infoPanel"></div>
-                <div class="chart-wrapper">
-                    <canvas id="profileChart"></canvas>
-                </div>
-            </div>
+        <div class="stats">
+            <strong>Centro:</strong> <span id="centerCoords">0.000000, 0.000000</span>
         </div>
     </div>
-
+    
+    <div id="myDiv"></div>
+    
+    <div class="controls">
+        <button onclick="resetView()">Vista Inicial</button>
+        <button onclick="topView()">Vista Superior</button>
+        <button onclick="sideView()">Vista Lateral</button>
+        <button onclick="saveImage()">Guardar Imagen</button>
+        <button onclick="toggleSpin()">Rotación Auto</button>
+    </div>
+    
+    <div class="legend">
+        <strong>Atajos de teclado:</strong><br>
+        R - Vista inicial<br>
+        T - Vista superior<br>
+        S - Vista lateral<br>
+        Espacio - Rotación automática
+    </div>
+    
     <script>
-        let chartData = [];
-        let chart = null;
-
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            setTimeout(() => errorDiv.style.display = 'none', 5000);
-        }
-
-        function showSuccess(message) {
-            const successDiv = document.getElementById('successMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-            setTimeout(() => successDiv.style.display = 'none', 3000);
-        }
-
-        function addPoint() {
-            const lat = parseFloat(document.getElementById('latitude').value);
-            const lng = parseFloat(document.getElementById('longitude').value);
-            const elev = parseFloat(document.getElementById('elevation').value);
-
-            if (isNaN(lat) || isNaN(lng) || isNaN(elev)) {
-                showError('Bitte geben Sie gültige Werte für alle Felder ein.');
-                return;
-            }
-
-            chartData.push({
-                lat: lat,
-                lng: lng,
-                elevation: elev
-            });
-
-            showSuccess(`Punkt hinzugefügt: (${lat}, ${lng}) - ${elev}m. Gesamt: ${chartData.length} Punkte`);
-            
-            // Clear inputs
-            document.getElementById('latitude').value = '';
-            document.getElementById('longitude').value = '';
-            document.getElementById('elevation').value = '';
-        }
-
-        function clearPoints() {
-            chartData = [];
-            if (chart) {
-                chart.destroy();
-                chart = null;
-            }
-            document.getElementById('chartContainer').style.display = 'none';
-            showSuccess('Alle Punkte wurden zurückgesetzt.');
-        }
-
+        let plotData = null;
+        let centerCoords = { lat: 19.4326, lon: -99.1332 };
+        let spinning = false;
+        let spinInterval;
+        let currentAngle = 0;
+        
         function loadSampleData() {
-            const sampleJson = `[
-    {
-        "results": [
-            {"elevation": 617.2320556640625, "location": {"lat": 25.6505006, "lng": -100.3509594}},
-            {"elevation": 619.8789672851562, "location": {"lat": 25.65106037659643, "lng": -100.3510448143797}},
-            {"elevation": 619.54736328125, "location": {"lat": 25.65162015314316, "lng": -100.3511302295609}},
-            {"elevation": 616.454345703125, "location": {"lat": 25.65217992964021, "lng": -100.3512156455436}},
-            {"elevation": 612.707275390625, "location": {"lat": 25.65273970608757, "lng": -100.3513010623279}},
-            {"elevation": 610.58203125, "location": {"lat": 25.65329948248522, "lng": -100.3513864799137}},
-            {"elevation": 613.5145263671875, "location": {"lat": 25.65385925883318, "lng": -100.3514718983011}},
-            {"elevation": 610.9623413085938, "location": {"lat": 25.65441903513145, "lng": -100.3515573174901}},
-            {"elevation": 609.1968383789062, "location": {"lat": 25.65497881138002, "lng": -100.3516427374808}},
-            {"elevation": 612.20166015625, "location": {"lat": 25.65553858757888, "lng": -100.3517281582731}},
-            {"elevation": 606.4449462890625, "location": {"lat": 25.65609836372805, "lng": -100.3518135798671}},
-            {"elevation": 605.408935546875, "location": {"lat": 25.6566581398275, "lng": -100.3518990022629}},
-            {"elevation": 602.922119140625, "location": {"lat": 25.65721791587726, "lng": -100.3519844254604}},
-            {"elevation": 604.5534057617188, "location": {"lat": 25.6577776918773, "lng": -100.3520698494597}},
-            {"elevation": 601.4326171875, "location": {"lat": 25.65833746782764, "lng": -100.3521552742608}},
-            {"elevation": 599.6361694335938, "location": {"lat": 25.65889724372826, "lng": -100.3522406998637}},
-            {"elevation": 598.525634765625, "location": {"lat": 25.65945701957917, "lng": -100.3523261262685}},
-            {"elevation": 598.36572265625, "location": {"lat": 25.66001679538036, "lng": -100.3524115534752}},
-            {"elevation": 595.22119140625, "location": {"lat": 25.66057657113184, "lng": -100.3524969814838}},
-            {"elevation": 594.89111328125, "location": {"lat": 25.66113634683361, "lng": -100.3525824102943}},
-            {"elevation": 596.171630859375, "location": {"lat": 25.66169612248565, "lng": -100.3526678399068}},
-            {"elevation": 597.0421142578125, "location": {"lat": 25.66225589808797, "lng": -100.3527532703213}},
-            {"elevation": 602.17529296875, "location": {"lat": 25.66281567364057, "lng": -100.3528387015379}},
-            {"elevation": 612.0739135742188, "location": {"lat": 25.66337544914344, "lng": -100.3529241335565}},
-            {"elevation": 627.019287109375, "location": {"lat": 25.66393522459658, "lng": -100.3530095663772}},
-            {"elevation": 641.6204223632812, "location": {"lat": 25.664495, "lng": -100.353095}}
-        ]
-    }
-]`;
-            document.getElementById('jsonData').value = sampleJson;
-            showSuccess('Beispieldaten wurden geladen. Klicken Sie auf "JSON Verarbeiten" um das Diagramm zu erstellen.');
-        }
-
-        function parseJsonData() {
-            const jsonText = document.getElementById('jsonData').value.trim();
-            
-            if (!jsonText) {
-                showError('Bitte geben Sie JSON-Daten ein.');
-                return;
-            }
-
-            try {
-                const data = JSON.parse(jsonText);
-                chartData = [];
-
-                // Handle different JSON structures
-                if (Array.isArray(data)) {
-                    data.forEach(item => {
-                        if (item.results && Array.isArray(item.results)) {
-                            item.results.forEach(result => {
-                                if (result.elevation && result.location) {
-                                    chartData.push({
-                                        lat: result.location.lat,
-                                        lng: result.location.lng,
-                                        elevation: result.elevation
-                                    });
-                                }
-                            });
-                        } else if (item.elevation && item.location) {
-                            chartData.push({
-                                lat: item.location.lat,
-                                lng: item.location.lng,
-                                elevation: item.elevation
-                            });
-                        } else if (item.lat && item.lng && item.elevation) {
-                            chartData.push({
-                                lat: item.lat,
-                                lng: item.lng,
-                                elevation: item.elevation
-                            });
-                        }
-                    });
+            const sampleData = {
+                buildingsCount: 5,
+                centerCoordinates: { lat: 19.4326, lon: -99.1332 },
+                plotData: {
+                    x: [0, 100, -100, 200, -200],
+                    y: [0, 100, -100, -200, 200],
+                    z: [0, 0, 0, 0, 0],
+                    heights: [80, 120, 60, 150, 90],
+                    labels: ["Torre Central", "Edificio Norte", "Edificio Sur", "Torre Este", "Torre Oeste"],
+                    colors: [80, 120, 60, 150, 90]
                 }
-
-                if (chartData.length === 0) {
-                    showError('Keine gültigen Koordinaten in den JSON-Daten gefunden.');
+            };
+            
+            document.getElementById('dataInput').value = JSON.stringify(sampleData, null, 2);
+            processData(sampleData);
+        }
+        
+        function loadData() {
+            try {
+                const inputData = document.getElementById('dataInput').value.trim();
+                if (!inputData) {
+                    alert('Por favor, introduce los datos JSON.');
                     return;
                 }
-
-                showSuccess(`${chartData.length} Punkte aus JSON-Daten geladen.`);
-                createChart();
+                
+                const data = JSON.parse(inputData);
+                processData(data);
             } catch (error) {
-                showError('Ungültiges JSON-Format: ' + error.message);
+                alert('Error al procesar los datos JSON: ' + error.message);
+                console.error('Error:', error);
             }
         }
-
-        function calculateDistance(lat1, lng1, lat2, lng2) {
-            const R = 6371000; // Earth's radius in meters
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLng = (lng2 - lng1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLng/2) * Math.sin(dLng/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c; // Return distance in meters
-        }
-
-        function createChart() {
-            if (chartData.length < 2) {
-                showError('Mindestens 2 Punkte sind erforderlich, um ein Diagramm zu erstellen.');
+        
+        function processData(data) {
+            // Validar estructura de datos
+            if (!data.plotData || !data.plotData.x || !data.plotData.y || !data.plotData.heights) {
+                alert('Los datos no tienen la estructura correcta. Faltan campos: x, y, heights');
                 return;
             }
-
-            // Calculate cumulative distances
-            let cumulativeDistance = 0;
-            const processedData = chartData.map((point, index) => {
-                if (index > 0) {
-                    const prevPoint = chartData[index - 1];
-                    const distanceInMeters = calculateDistance(
-                        prevPoint.lat, prevPoint.lng,
-                        point.lat, point.lng
-                    );
-                    cumulativeDistance += distanceInMeters;
-                }
-                return {
-                    x: cumulativeDistance / 1000, // Convert to kilometers
-                    y: point.elevation,
-                    lat: point.lat,
-                    lng: point.lng
-                };
-            });
-
-            // Update info panel
-            updateInfoPanel(processedData);
-
-            // Destroy existing chart
-            if (chart) {
-                chart.destroy();
+            
+            plotData = data.plotData;
+            centerCoords = data.centerCoordinates || centerCoords;
+            
+            // Actualizar información en pantalla
+            document.getElementById('buildingCount').textContent = data.buildingsCount || plotData.x.length;
+            document.getElementById('centerCoords').textContent = 
+                `${centerCoords.lat.toFixed(6)}, ${centerCoords.lon.toFixed(6)}`;
+            
+            // Crear visualización
+            createVisualization();
+        }
+        
+        function createVisualization() {
+            if (typeof Plotly === 'undefined') {
+                showErrorMessage('Plotly.js no se ha cargado correctamente. Por favor, recarga la página.');
+                return;
             }
-
-            // Create new chart
-            const ctx = document.getElementById('profileChart').getContext('2d');
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    datasets: [{
-                        label: 'Bodenprofil',
-                        data: processedData,
-                        borderColor: '#3498db',
-                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.1,
-                        pointBackgroundColor: '#e74c3c',
-                        pointBorderColor: '#c0392b',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    }]
+            
+            if (!plotData || !plotData.x || plotData.x.length === 0) {
+                showNoDataMessage();
+                return;
+            }
+            
+            console.log('Creando visualización con datos:', {
+                edificios: plotData.x.length,
+                alturaMaxima: Math.max(...plotData.heights),
+                alturaMinima: Math.min(...plotData.heights)
+            });
+            
+            const data = [];
+            const buildingSize = 20; // metros
+            
+            // Crear edificios como cubos 3D
+            for (let i = 0; i < plotData.x.length; i++) {
+                const x = plotData.x[i];
+                const y = plotData.y[i];
+                const height = plotData.heights[i];
+                const halfSize = buildingSize / 2;
+                
+                // Crear superficie del edificio (mesh3d)
+                const surfaceTrace = {
+                    type: 'mesh3d',
+                    x: [x-halfSize, x+halfSize, x+halfSize, x-halfSize, x-halfSize, x+halfSize, x+halfSize, x-halfSize],
+                    y: [y-halfSize, y-halfSize, y+halfSize, y+halfSize, y-halfSize, y-halfSize, y+halfSize, y+halfSize],
+                    z: [0, 0, 0, 0, height, height, height, height],
+                    i: [0, 0, 0, 0, 4, 4, 4, 4, 0, 1, 2, 3],
+                    j: [1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 0],
+                    k: [5, 6, 7, 7, 1, 2, 3, 3, 4, 5, 6, 7],
+                    color: `hsl(${Math.min(height * 2, 360)}, 70%, 50%)`,
+                    opacity: 0.8,
+                    name: plotData.labels ? plotData.labels[i] : `Edificio ${i+1}`,
+                    showlegend: false,
+                    hovertemplate: 
+                        '<b>%{fullData.name}</b><br>' +
+                        'Altura: ' + height + 'm<br>' +
+                        'Posición: (' + x.toFixed(1) + ', ' + y.toFixed(1) + ')<br>' +
+                        '<extra></extra>'
+                };
+                
+                data.push(surfaceTrace);
+            }
+            
+            // Añadir marcadores en la cima de cada edificio con etiquetas
+            if (plotData.labels) {
+                const labelTrace = {
+                    type: 'scatter3d',
+                    mode: 'markers+text',
+                    x: plotData.x,
+                    y: plotData.y,
+                    z: plotData.heights.map(h => h + 10),
+                    text: plotData.labels,
+                    textposition: 'top center',
+                    textfont: {
+                        size: 12,
+                        color: '#000'
+                    },
+                    marker: {
+                        size: 8,
+                        color: plotData.colors || plotData.heights,
+                        colorscale: 'Viridis',
+                        showscale: true,
+                        colorbar: {
+                            title: 'Altura (m)',
+                            thickness: 20,
+                            len: 0.5
+                        }
+                    },
+                    name: 'Edificios',
+                    showlegend: false,
+                    hovertemplate: 
+                        '<b>%{text}</b><br>' +
+                        'Altura: %{marker.color:.1f}m<br>' +
+                        'Posición: (%{x:.1f}, %{y:.1f})<br>' +
+                        '<extra></extra>'
+                };
+                
+                data.push(labelTrace);
+            }
+            
+            // Añadir plano base
+            const maxRange = Math.max(
+                Math.max(...plotData.x) - Math.min(...plotData.x),
+                Math.max(...plotData.y) - Math.min(...plotData.y)
+            );
+            const gridSize = Math.max(maxRange / 2, 200);
+            
+            const gridTrace = {
+                type: 'mesh3d',
+                x: [-gridSize, gridSize, gridSize, -gridSize],
+                y: [-gridSize, -gridSize, gridSize, gridSize],
+                z: [-1, -1, -1, -1],
+                i: [0, 0],
+                j: [1, 2],
+                k: [2, 3],
+                color: '#e0e0e0',
+                opacity: 0.3,
+                showlegend: false,
+                hoverinfo: 'skip'
+            };
+            
+            data.push(gridTrace);
+            
+            // Configuración del layout
+            const layout = {
+                title: {
+                    text: 'Vista 3D de Edificios - OpenStreetMap',
+                    font: { size: 24 }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Höhenprofil entlang der Route',
-                            font: {
-                                size: 18,
-                                weight: 'bold'
-                            },
-                            color: '#2c3e50'
+                scene: {
+                    xaxis: {
+                        title: 'Este-Oeste (metros)',
+                        gridcolor: '#bbb',
+                        showbackground: true,
+                        backgroundcolor: '#f0f0f0'
+                    },
+                    yaxis: {
+                        title: 'Norte-Sur (metros)',
+                        gridcolor: '#bbb',
+                        showbackground: true,
+                        backgroundcolor: '#f0f0f0'
+                    },
+                    zaxis: {
+                        title: 'Altura (metros)',
+                        gridcolor: '#bbb',
+                        showbackground: true,
+                        backgroundcolor: '#f0f0f0'
+                    },
+                    camera: {
+                        eye: {
+                            x: 1.5,
+                            y: -1.5,
+                            z: 1.2
                         },
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: function(context) {
-                                    const point = context[0].parsed;
-                                    return `Distanz: ${point.x.toFixed(3)} km`;
-                                },
-                                label: function(context) {
-                                    const dataPoint = processedData[context.dataIndex];
-                                    return [
-                                        `Höhe: ${context.parsed.y.toFixed(2)} m`,
-                                        `Koordinaten: ${dataPoint.lat.toFixed(6)}, ${dataPoint.lng.toFixed(6)}`
-                                    ];
-                                }
-                            }
+                        center: {
+                            x: 0,
+                            y: 0,
+                            z: 0
                         }
                     },
-                    scales: {
-                        x: {
-                            type: 'linear', // <-- HIER IST DIE KORREKTUR
-                            title: {
-                                display: true,
-                                text: 'Distanz (km)',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            },
-                            beginAtZero: true
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Höhe (m)',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
+                    aspectmode: 'manual',
+                    aspectratio: {
+                        x: 1,
+                        y: 1,
+                        z: 0.5
                     }
+                },
+                autosize: true,
+                margin: { l: 0, r: 0, b: 0, t: 40 },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                showlegend: false
+            };
+            
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                toImageButtonOptions: {
+                    format: 'png',
+                    filename: 'edificios_3d',
+                    height: 1080,
+                    width: 1920,
+                    scale: 2
+                }
+            };
+            
+            // Crear el gráfico
+            Plotly.newPlot('myDiv', data, layout, config);
+            
+            // Auto-ajustar vista
+            setTimeout(autoAdjustView, 100);
+            
+            // Mostrar estadísticas
+            showStatistics();
+        }
+        
+        function showErrorMessage(message) {
+            document.getElementById('myDiv').innerHTML = 
+                '<div style="text-align: center; padding: 50px; color: #d32f2f; background: #ffebee; border-radius: 8px; margin: 20px;">' +
+                '<h2>❌ Error</h2>' +
+                '<p>' + message + '</p>' +
+                '<button onclick="location.reload()" style="margin-top: 10px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Recargar Página</button>' +
+                '</div>';
+        }
+        
+        function showNoDataMessage() {
+            document.getElementById('myDiv').innerHTML = 
+                '<div style="text-align: center; padding: 50px; color: #666;">' +
+                '<h2>No hay datos de edificios</h2>' +
+                '<p>Por favor, carga los datos JSON desde n8n o usa los datos de ejemplo.</p>' +
+                '</div>';
+        }
+        
+        function showStatistics() {
+            if (!plotData || !plotData.heights) return;
+            
+            const avgHeight = plotData.heights.reduce((a, b) => a + b, 0) / plotData.heights.length;
+            const statsDiv = document.createElement('div');
+            statsDiv.style.cssText = 'margin: 20px auto; padding: 15px; background: #fff3cd; border-radius: 4px; max-width: 600px; text-align: center;';
+            statsDiv.innerHTML = `
+                <strong>Estadísticas:</strong><br>
+                Total edificios: ${plotData.x.length}<br>
+                Altura promedio: ${avgHeight.toFixed(1)}m<br>
+                Altura máxima: ${Math.max(...plotData.heights)}m<br>
+                Altura mínima: ${Math.min(...plotData.heights)}m
+            `;
+            
+            // Remover estadísticas anteriores
+            const existingStats = document.querySelector('.info .stats-summary');
+            if (existingStats) existingStats.remove();
+            
+            statsDiv.className = 'stats-summary';
+            document.querySelector('.info').appendChild(statsDiv);
+        }
+        
+        // Funciones de control de vista
+        function resetView() {
+            if (typeof Plotly === 'undefined') return;
+            Plotly.relayout('myDiv', {
+                'scene.camera': {
+                    eye: { x: 1.5, y: -1.5, z: 1.2 },
+                    center: { x: 0, y: 0, z: 0 }
                 }
             });
-
-            document.getElementById('chartContainer').style.display = 'block';
-            showSuccess('Diagramm erfolgreich erstellt!');
         }
-
-        function updateInfoPanel(data) {
-            const totalDistance = data[data.length - 1].x;
-            const elevations = data.map(d => d.y);
-            const minElevation = Math.min(...elevations);
-            const maxElevation = Math.max(...elevations);
-            const elevationChange = maxElevation - minElevation;
-
-            const infoPanel = document.getElementById('infoPanel');
-            infoPanel.innerHTML = `
-                <div class="info-grid">
-                    <div class="info-item">
-                        <h4>Gesamtdistanz</h4>
-                        <span>${totalDistance.toFixed(3)} km</span>
-                    </div>
-                    <div class="info-item">
-                        <h4>Anzahl Punkte</h4>
-                        <span>${data.length}</span>
-                    </div>
-                    <div class="info-item">
-                        <h4>Min. Höhe</h4>
-                        <span>${minElevation.toFixed(1)} m</span>
-                    </div>
-                    <div class="info-item">
-                        <h4>Max. Höhe</h4>
-                        <span>${maxElevation.toFixed(1)} m</span>
-                    </div>
-                    <div class="info-item">
-                        <h4>Höhenunterschied</h4>
-                        <span>${elevationChange.toFixed(1)} m</span>
-                    </div>
-                </div>
-            `;
+        
+        function topView() {
+            if (typeof Plotly === 'undefined') return;
+            Plotly.relayout('myDiv', {
+                'scene.camera': {
+                    eye: { x: 0, y: 0, z: 2.5 },
+                    center: { x: 0, y: 0, z: 0 }
+                }
+            });
         }
+        
+        function sideView() {
+            if (typeof Plotly === 'undefined') return;
+            Plotly.relayout('myDiv', {
+                'scene.camera': {
+                    eye: { x: 2.5, y: 0, z: 0.5 },
+                    center: { x: 0, y: 0, z: 0 }
+                }
+            });
+        }
+        
+        function saveImage() {
+            if (typeof Plotly === 'undefined') return;
+            Plotly.downloadImage('myDiv', {
+                format: 'png',
+                width: 1920,
+                height: 1080,
+                filename: 'edificios_3d_' + new Date().getTime()
+            });
+        }
+        
+        function toggleSpin() {
+            if (spinning) {
+                clearInterval(spinInterval);
+                spinning = false;
+            } else {
+                spinning = true;
+                spinInterval = setInterval(() => {
+                    currentAngle += 2;
+                    const radians = currentAngle * Math.PI / 180;
+                    const distance = 2;
+                    const height = 1.2;
+                    
+                    Plotly.relayout('myDiv', {
+                        'scene.camera.eye': {
+                            x: distance * Math.cos(radians),
+                            y: distance * Math.sin(radians),
+                            z: height
+                        }
+                    });
+                }, 50);
+            }
+        }
+        
+        function autoAdjustView() {
+            if (typeof Plotly === 'undefined') return;
+            if (!plotData || !plotData.x || plotData.x.length === 0) return;
+            
+            const xRange = Math.max(...plotData.x) - Math.min(...plotData.x);
+            const yRange = Math.max(...plotData.y) - Math.min(...plotData.y);
+            const maxRange = Math.max(xRange, yRange);
+            
+            // Ajustar la distancia de la cámara según el rango de datos
+            const cameraDistance = Math.max(maxRange / 200, 1);
+            
+            Plotly.relayout('myDiv', {
+                'scene.camera.eye': {
+                    x: cameraDistance * 1.5,
+                    y: -cameraDistance * 1.5,
+                    z: cameraDistance * 1.2
+                }
+            });
+        }
+        
+        // Eventos de teclado
+        document.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'r':
+                    resetView();
+                    break;
+                case 't':
+                    topView();
+                    break;
+                case 's':
+                    sideView();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    toggleSpin();
+                    break;
+            }
+        });
+        
+        // Verificar que Plotly se haya cargado correctamente
+        function checkPlotlyAndInit() {
+            if (typeof Plotly !== 'undefined') {
+                console.log('Plotly cargado correctamente');
+                loadSampleData();
+            } else {
+                console.error('Plotly no se ha cargado. Reintentando...');
+                setTimeout(checkPlotlyAndInit, 500);
+            }
+        }
+        
+        // Esperar a que la página se cargue completamente
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', checkPlotlyAndInit);
+        } else {
+            checkPlotlyAndInit();
+        }
+        
     </script>
 </body>
 </html>
