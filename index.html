@@ -1,145 +1,557 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="light">
 <head>
     <meta charset="utf-8">
     <title>Visualización 3D de Edificios - OpenStreetMap</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
     <style>
-        body {
+        :root[data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #2c3e50;
+            --text-secondary: #6c757d;
+            --accent-primary: #3498db;
+            --accent-hover: #2980b9;
+            --border-color: #e9ecef;
+            --shadow-color: rgba(0,0,0,0.1);
+            --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --success-bg: #d4edda;
+            --info-bg: #e7f3ff;
+            --warning-bg: #fff3cd;
+            --stats-text: #2c3e50;
+            --stats-bg: #ffffff;
+        }
+
+        :root[data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #e9ecef;
+            --text-secondary: #adb5bd;
+            --accent-primary: #3498db;
+            --accent-hover: #2980b9;
+            --border-color: #404040;
+            --shadow-color: rgba(0,0,0,0.3);
+            --card-bg: #2d2d2d;
+            --input-bg: #333333;
+            --success-bg: #1e4620;
+            --info-bg: #1a3a5f;
+            --warning-bg: #4d3c00;
+            --stats-text: #ffffff;
+            --stats-bg: #2d2d2d;
+        }
+
+        * {
             margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+        }
+
         h1 {
-            color: #333;
-            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
         }
-        #myDiv {
-            width: 100%;
-            height: 700px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .controls {
-            margin-top: 20px;
-            text-align: center;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        button {
-            margin: 5px;
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
+
+        .theme-toggle {
+            background: none;
             border: none;
-            border-radius: 4px;
+            color: var(--text-primary);
             cursor: pointer;
-            font-size: 14px;
+            padding: 0.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
         }
-        button:hover {
-            background: #0056b3;
+
+        .theme-toggle:hover {
+            transform: rotate(30deg);
+            background: var(--bg-secondary);
         }
-        .info {
-            margin: 20px 0;
-            padding: 15px;
-            background: #e7f3ff;
-            border-radius: 4px;
-            text-align: center;
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
         }
-        .stats {
-            display: inline-block;
-            margin: 0 20px;
-        }
+
         .data-input {
-            margin: 20px auto;
-            max-width: 800px;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
         }
+
         textarea {
             width: 100%;
             height: 150px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: monospace;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            resize: vertical;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent-primary);
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
         .load-btn {
-            background: #28a745;
-            margin-top: 10px;
+            background: #2ecc71;
         }
+
         .load-btn:hover {
-            background: #218838;
+            background: #27ae60;
         }
+
+        #myDiv {
+            width: 100%;
+            height: 700px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .info {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
+        }
+
+        .stats {
+            background: var(--stats-bg);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            color: var(--stats-text);
+        }
+
+        .stats strong {
+            color: var(--stats-text);
+            opacity: 0.9;
+        }
+
+        .stats span {
+            color: var(--stats-text);
+            font-weight: 500;
+        }
+
         .legend {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: white;
-            padding: 15px;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            max-width: 250px;
+            backdrop-filter: blur(10px);
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
+        }
+
+        .legend:hover {
+            opacity: 1;
+        }
+
+        .keyboard-shortcut {
+            display: inline-block;
+            background: var(--bg-secondary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin: 0.2rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .legend {
+                position: static;
+                margin-top: 1rem;
+                max-width: 100%;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card, .header, #myDiv {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Loading animation */
+        .loading {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Update styles for coordinate inputs */
+        .coordinates-input {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .coordinate-fields {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .coordinate-field {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .coordinate-field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .coordinate-input {
+            width: 100%;
+            padding: 0.75rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            font-size: 12px;
-            max-width: 200px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .coordinate-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .input-help {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .input-help small {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .example-btn {
+            background: #3498db;
+            margin-top: 0.5rem;
+        }
+
+        .example-btn:hover {
+            background: #2980b9;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        /* Add styles for feedback messages */
+        .feedback-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .feedback-message.visible {
+            display: block;
+            opacity: 1;
+        }
+
+        .feedback-success {
+            background: var(--success-bg);
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .feedback-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .feedback-info {
+            background: var(--info-bg);
+            color: #004085;
+            border: 1px solid #b8daff;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .line-of-sight-info {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .test-btn {
+            background: #9b59b6;
+        }
+
+        .test-btn:hover {
+            background: #8e44ad;
+        }
+
+        .button-group button {
+            flex: 1;
+            min-width: 200px;
         }
     </style>
 </head>
 <body>
-    <h1>🏢 Visualización 3D de Edificios - Ciudad de México</h1>
-    
-    <div class="data-input">
-        <h3>Cargar datos de n8n:</h3>
-        <textarea id="dataInput" placeholder='Pega aquí los datos JSON de n8n en el formato:
-{
-  "buildingsCount": 10,
-  "centerCoordinates": {"lat": 19.4326, "lon": -99.1332},
-  "plotData": {
-    "x": [100, 200, 300],
-    "y": [100, 200, 300],
-    "z": [0, 0, 0],
-    "heights": [50, 75, 100],
-    "labels": ["Edificio 1", "Edificio 2", "Edificio 3"],
-    "colors": [50, 75, 100]
-  }
-}'></textarea>
-        <br>
-        <button class="load-btn" onclick="loadData()">Cargar y Visualizar</button>
-        <button onclick="loadSampleData()">Cargar Datos de Ejemplo</button>
-    </div>
-    
-    <div class="info">
-        <div class="stats">
-            <strong>Edificios cargados:</strong> <span id="buildingCount">0</span>
+    <div class="container">
+        <header class="header">
+            <h1>🏢 Visualización 3D de Edificios</h1>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+                🌓
+            </button>
+        </header>
+
+        <div class="card data-input">
+            <h3>Cargar datos de n8n</h3>
+            <textarea id="dataInput" placeholder='Pega aquí los datos JSON de n8n...'></textarea>
+            <div class="button-group">
+                <button class="load-btn" onclick="loadData()">
+                    <span>📊</span> Cargar y Visualizar
+                </button>
+                <button onclick="loadSampleData()">
+                    <span>📁</span> Cargar Datos de Ejemplo
+                </button>
+                <button onclick="loadTestData()" class="test-btn">
+                    <span>🧪</span> Cargar Datos de Prueba
+                </button>
+            </div>
         </div>
-        <div class="stats">
-            <strong>Centro:</strong> <span id="centerCoords">0.000000, 0.000000</span>
+
+        <div class="card">
+            <h3>Línea de Vista</h3>
+            <div class="coordinates-input">
+                <div class="coordinate-fields">
+                    <div class="coordinate-field">
+                        <label>Punto Inicial:</label>
+                        <input type="text" id="startCoordinates" 
+                               class="coordinate-input"
+                               placeholder="25.654627, -100.326208, 10.5"
+                               title="Formato: lat, lon, altura">
+                        <div class="error-message" id="startError"></div>
+                    </div>
+                    <div class="coordinate-field">
+                        <label>Punto Final:</label>
+                        <input type="text" id="endCoordinates" 
+                               class="coordinate-input"
+                               placeholder="25.6479154, -100.3282983, 5.5"
+                               title="Formato: lat, lon, altura">
+                        <div class="error-message" id="endError"></div>
+                    </div>
+                </div>
+                <div class="input-help">
+                    <small>Formatos aceptados:</small>
+                    <small>- lat, lon, altura (ej: 25.654627, -100.326208, 10.5)</small>
+                    <small>- lat,lon,altura (sin espacios)</small>
+                    <small>- lat lon altura (separados por espacios)</small>
+                </div>
+                <div class="button-group">
+                    <button onclick="checkLineOfSightFromFields()" class="check-btn">
+                        <span>👁️</span> Verificar Línea de Vista
+                    </button>
+                    <button onclick="fillExampleCoordinates()" class="example-btn">
+                        <span>📋</span> Usar Ejemplo
+                    </button>
+                </div>
+                <div id="feedbackMessage" class="feedback-message"></div>
+                <div id="lineOfSightInfo" class="line-of-sight-info"></div>
+            </div>
+        </div>
+
+        <div class="info">
+            <div class="stats">
+                <strong>Edificios cargados:</strong> <span id="buildingCount">0</span>
+            </div>
+            <div class="stats">
+                <strong>Centro:</strong> <span id="centerCoords">0.000000, 0.000000</span>
+            </div>
+        </div>
+
+        <div id="myDiv"></div>
+
+        <div class="controls">
+            <button onclick="resetView()">
+                <span>🔄</span> Vista Inicial
+            </button>
+            <button onclick="topView()">
+                <span>⬆️</span> Vista Superior
+            </button>
+            <button onclick="sideView()">
+                <span>↔️</span> Vista Lateral
+            </button>
+            <button onclick="zoomIn()">
+                <span>🔍+</span> Acercar
+            </button>
+            <button onclick="zoomOut()">
+                <span>🔍-</span> Alejar
+            </button>
+            <button onclick="saveImage()">
+                <span>💾</span> Guardar Imagen
+            </button>
+            <button onclick="toggleSpin()">
+                <span>🔄</span> Rotación Auto
+            </button>
+        </div>
+
+        <div class="legend">
+            <strong>Atajos de teclado:</strong><br>
+            <span class="keyboard-shortcut">R</span> Vista inicial<br>
+            <span class="keyboard-shortcut">T</span> Vista superior<br>
+            <span class="keyboard-shortcut">S</span> Vista lateral<br>
+            <span class="keyboard-shortcut">+</span> Acercar<br>
+            <span class="keyboard-shortcut">-</span> Alejar<br>
+            <span class="keyboard-shortcut">Espacio</span> Rotación automática
         </div>
     </div>
-    
-    <div id="myDiv"></div>
-    
-    <div class="controls">
-        <button onclick="resetView()">Vista Inicial</button>
-        <button onclick="topView()">Vista Superior</button>
-        <button onclick="sideView()">Vista Lateral</button>
-        <button onclick="saveImage()">Guardar Imagen</button>
-        <button onclick="toggleSpin()">Rotación Auto</button>
-    </div>
-    
-    <div class="legend">
-        <strong>Atajos de teclado:</strong><br>
-        R - Vista inicial<br>
-        T - Vista superior<br>
-        S - Vista lateral<br>
-        Espacio - Rotación automática
-    </div>
-    
+
     <script>
         let plotData = null;
         let centerCoords = { lat: 19.4326, lon: -99.1332 };
@@ -149,15 +561,24 @@
         
         function loadSampleData() {
             const sampleData = {
-                buildingsCount: 5,
-                centerCoordinates: { lat: 19.4326, lon: -99.1332 },
-                plotData: {
-                    x: [0, 100, -100, 200, -200],
-                    y: [0, 100, -100, -200, 200],
-                    z: [0, 0, 0, 0, 0],
-                    heights: [80, 120, 60, 150, 90],
-                    labels: ["Torre Central", "Edificio Norte", "Edificio Sur", "Torre Este", "Torre Oeste"],
-                    colors: [80, 120, 60, 150, 90]
+                "buildingsCount": 5,
+                "centerCoordinates": {
+                    "lat": 19.4326,
+                    "lon": -99.1332
+                },
+                "plotData": {
+                    "x": [0, 100, -100, 200, -200],
+                    "y": [0, 100, -100, -200, 200],
+                    "z": [0, 0, 0, 0, 0],
+                    "heights": [80, 120, 60, 150, 90],
+                    "labels": [
+                        "Torre Central",
+                        "Edificio Norte",
+                        "Edificio Sur",
+                        "Torre Este",
+                        "Torre Oeste"
+                    ],
+                    "colors": [80, 120, 60, 150, 90]
                 }
             };
             
@@ -182,117 +603,410 @@
         }
         
         function processData(data) {
-            // Validar estructura de datos
+            try {
+                // Check if it's OpenStreetMap data
+                if (data.elements && Array.isArray(data.elements)) {
+                    processOSMData(data);
+                } else if (data.plotData) {
+                    // Handle the original format
+                    processOriginalData(data);
+                } else {
+                    throw new Error('Formato de datos no reconocido');
+                }
+            } catch (error) {
+                alert('Error al procesar los datos: ' + error.message);
+                console.error('Error:', error);
+            }
+        }
+
+        function processOSMData(data) {
+            // Create a map of nodes for quick lookup
+            const nodes = new Map();
+            const ways = [];
+            const buildings = [];
+            const paths = [];
+            
+            // First pass: collect all nodes
+            data.elements.forEach(element => {
+                if (element.type === 'node') {
+                    nodes.set(element.id, {
+                        lat: element.lat,
+                        lon: element.lon
+                    });
+                } else if (element.type === 'way') {
+                    if (element.tags) {
+                        if (element.tags.building) {
+                            ways.push({...element, type: 'building'});
+                        } else if (element.tags.highway) {
+                            ways.push({...element, type: 'path'});
+                        }
+                    }
+                }
+            });
+
+            // Calculate center coordinates
+            let minLat = Infinity, maxLat = -Infinity;
+            let minLon = Infinity, maxLon = -Infinity;
+            
+            nodes.forEach(node => {
+                minLat = Math.min(minLat, node.lat);
+                maxLat = Math.max(maxLat, node.lat);
+                minLon = Math.min(minLon, node.lon);
+                maxLon = Math.max(maxLon, node.lon);
+            });
+
+            const centerLat = (minLat + maxLat) / 2;
+            const centerLon = (minLon + maxLon) / 2;
+
+            // Process each way
+            ways.forEach(way => {
+                if (!way.nodes || way.nodes.length < 2) return; // Skip invalid ways
+
+                // Get way nodes and convert to meters
+                const wayNodes = way.nodes.map(nodeId => {
+                    const node = nodes.get(nodeId);
+                    if (!node) return null;
+                    
+                    // Convert lat/lon to meters relative to center
+                    const x = (node.lon - centerLon) * 111320 * Math.cos(centerLat * Math.PI / 180);
+                    const y = (node.lat - centerLat) * 111320;
+                    
+                    return { x, y };
+                }).filter(node => node !== null);
+
+                if (wayNodes.length < 2) return; // Skip invalid ways
+
+                if (way.type === 'building') {
+                    // Get building height from tags
+                    let height = 10; // Default height in meters
+                    if (way.tags['building:levels']) {
+                        height = parseInt(way.tags['building:levels']) * 3; // Approximate 3m per floor
+                    }
+
+                    // Get building type and color
+                    const buildingType = way.tags.building || 'yes';
+                    const buildingColor = getBuildingColor(buildingType, height);
+
+                    // Calculate building center
+                    const sumX = wayNodes.reduce((sum, node) => sum + node.x, 0);
+                    const sumY = wayNodes.reduce((sum, node) => sum + node.y, 0);
+                    const centerX = sumX / wayNodes.length;
+                    const centerY = sumY / wayNodes.length;
+
+                    // Calculate building area for sorting
+                    const area = calculatePolygonArea(wayNodes);
+
+                    buildings.push({
+                        x: centerX,
+                        y: centerY,
+                        height: height,
+                        name: way.tags.name || `${buildingType} ${buildings.length + 1}`,
+                        type: buildingType,
+                        color: buildingColor,
+                        nodes: wayNodes,
+                        area: area
+                    });
+                } else if (way.type === 'path') {
+                    // Process path
+                    paths.push({
+                        name: way.tags.name || `Path ${paths.length + 1}`,
+                        nodes: wayNodes,
+                        type: way.tags.highway || 'path',
+                        color: '#3498db' // Default path color
+                    });
+                }
+            });
+
+            // Sort buildings by area (largest first) to handle overlapping
+            buildings.sort((a, b) => b.area - a.area);
+
+            // Create plot data
+            plotData = {
+                buildings: buildings,
+                paths: paths,
+                center: { lat: centerLat, lon: centerLon }
+            };
+
+            centerCoords = { lat: centerLat, lon: centerLon };
+            
+            // Update UI
+            document.getElementById('buildingCount').textContent = buildings.length;
+            document.getElementById('centerCoords').textContent = 
+                `${centerCoords.lat.toFixed(6)}, ${centerCoords.lon.toFixed(6)}`;
+            
+            // Create visualization
+            createVisualization();
+        }
+
+        function getBuildingColor(type, height) {
+            // Define colors for different building types
+            const colors = {
+                'college': '#3498db', // Blue for educational buildings
+                'school': '#3498db',
+                'university': '#3498db',
+                'yes': '#95a5a6', // Gray for generic buildings
+                'residential': '#e74c3c', // Red for residential
+                'commercial': '#f1c40f', // Yellow for commercial
+                'office': '#2ecc71', // Green for offices
+                'retail': '#e67e22', // Orange for retail
+                'industrial': '#34495e' // Dark blue for industrial
+            };
+
+            // Get base color from type or default to gray
+            const baseColor = colors[type] || colors['yes'];
+            
+            // Adjust color based on height (darker for taller buildings)
+            const heightFactor = Math.min(height / 30, 1); // Normalize height to 0-1
+            return adjustColorBrightness(baseColor, 1 - heightFactor * 0.3);
+        }
+
+        function adjustColorBrightness(hex, factor) {
+            // Convert hex to RGB
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+
+            // Adjust brightness
+            const newR = Math.round(r * factor);
+            const newG = Math.round(g * factor);
+            const newB = Math.round(b * factor);
+
+            // Convert back to hex
+            return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+        }
+
+        function calculatePolygonArea(nodes) {
+            let area = 0;
+            for (let i = 0; i < nodes.length; i++) {
+                const j = (i + 1) % nodes.length;
+                area += nodes[i].x * nodes[j].y;
+                area -= nodes[j].x * nodes[i].y;
+            }
+            return Math.abs(area / 2);
+        }
+
+        function processOriginalData(data) {
+            // Original data processing logic
             if (!data.plotData || !data.plotData.x || !data.plotData.y || !data.plotData.heights) {
-                alert('Los datos no tienen la estructura correcta. Faltan campos: x, y, heights');
-                return;
+                throw new Error('Los datos no tienen la estructura correcta. Faltan campos: x, y, heights');
             }
             
             plotData = data.plotData;
             centerCoords = data.centerCoordinates || centerCoords;
             
-            // Actualizar información en pantalla
             document.getElementById('buildingCount').textContent = data.buildingsCount || plotData.x.length;
             document.getElementById('centerCoords').textContent = 
                 `${centerCoords.lat.toFixed(6)}, ${centerCoords.lon.toFixed(6)}`;
             
-            // Crear visualización
             createVisualization();
         }
-        
+
         function createVisualization() {
             if (typeof Plotly === 'undefined') {
                 showErrorMessage('Plotly.js no se ha cargado correctamente. Por favor, recarga la página.');
                 return;
             }
             
-            if (!plotData || !plotData.x || plotData.x.length === 0) {
+            if (!plotData || (!plotData.buildings && !plotData.paths)) {
                 showNoDataMessage();
                 return;
             }
             
-            console.log('Creando visualización con datos:', {
-                edificios: plotData.x.length,
-                alturaMaxima: Math.max(...plotData.heights),
-                alturaMinima: Math.min(...plotData.heights)
-            });
+            // Get current theme colors
+            const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor = isDarkMode ? '#ffffff' : '#2c3e50';
+            const gridColor = isDarkMode ? '#404040' : '#bbb';
+            const bgColor = isDarkMode ? '#2d2d2d' : '#f0f0f0';
+            const paperBgColor = isDarkMode ? '#1a1a1a' : '#ffffff';
             
             const data = [];
-            const buildingSize = 20; // metros
             
-            // Crear edificios como cubos 3D
-            for (let i = 0; i < plotData.x.length; i++) {
-                const x = plotData.x[i];
-                const y = plotData.y[i];
-                const height = plotData.heights[i];
-                const halfSize = buildingSize / 2;
-                
-                // Crear superficie del edificio (mesh3d)
-                const surfaceTrace = {
+            // Add paths first (so they appear behind buildings)
+            if (plotData.paths) {
+                plotData.paths.forEach(path => {
+                    // Create path line
+                    const pathTrace = {
+                        type: 'scatter3d',
+                        mode: 'lines',
+                        x: path.nodes.map(n => n.x),
+                        y: path.nodes.map(n => n.y),
+                        z: Array(path.nodes.length).fill(0.1), // Slightly above ground
+                        line: {
+                            color: path.color,
+                            width: 4,
+                            dash: 'solid'
+                        },
+                        name: path.name,
+                        showlegend: true,
+                        hoverinfo: 'text',
+                        text: path.name
+                    };
+                    data.push(pathTrace);
+                });
+            }
+            
+            // Add buildings
+            if (plotData.buildings) {
+                plotData.buildings.forEach((building, i) => {
+                    // Create building surfaces
+                    const vertices = [];
+                    const indices = [];
+                    const colors = [];
+                    
+                    // Add bottom vertices
+                    building.nodes.forEach(node => {
+                        vertices.push([node.x, node.y, 0]);
+                        colors.push(building.color);
+                    });
+                    
+                    // Add top vertices
+                    building.nodes.forEach(node => {
+                        vertices.push([node.x, node.y, building.height]);
+                        colors.push(building.color);
+                    });
+                    
+                    // Create triangles for the roof and floor
+                    const numNodes = building.nodes.length;
+                    for (let i = 1; i < numNodes - 1; i++) {
+                        // Floor triangles
+                        indices.push([0, i, i + 1]);
+                        // Roof triangles
+                        indices.push([numNodes, numNodes + i, numNodes + i + 1]);
+                    }
+                    
+                    // Create triangles for the walls
+                    for (let i = 0; i < numNodes; i++) {
+                        const nextI = (i + 1) % numNodes;
+                        // Each wall is made of two triangles
+                        indices.push([i, nextI, numNodes + i]);
+                        indices.push([nextI, numNodes + nextI, numNodes + i]);
+                    }
+                    
+                    // Create the building mesh
+                    const buildingMesh = {
+                        type: 'mesh3d',
+                        x: vertices.map(v => v[0]),
+                        y: vertices.map(v => v[1]),
+                        z: vertices.map(v => v[2]),
+                        i: indices.map(tri => tri[0]),
+                        j: indices.map(tri => tri[1]),
+                        k: indices.map(tri => tri[2]),
+                        color: colors[0],
+                        opacity: 0.8,
+                        flatshading: true,
+                        showlegend: false,
+                        hovertemplate: 
+                            '<b>' + building.name + '</b><br>' +
+                            'Tipo: ' + building.type + '<br>' +
+                            'Altura: ' + building.height + 'm<br>' +
+                            '<extra></extra>'
+                    };
+                    
+                    data.push(buildingMesh);
+
+                    // Add building outline
+                    const outline = {
+                        type: 'scatter3d',
+                        mode: 'lines',
+                        x: [...building.nodes.map(n => n.x), building.nodes[0].x],
+                        y: [...building.nodes.map(n => n.y), building.nodes[0].y],
+                        z: Array(building.nodes.length + 1).fill(0),
+                        line: {
+                            color: isDarkMode ? '#ffffff' : '#000000',
+                            width: 2
+                        },
+                        showlegend: false,
+                        hoverinfo: 'skip'
+                    };
+                    data.push(outline);
+
+                    // Add roof outline
+                    const roofOutline = {
+                        type: 'scatter3d',
+                        mode: 'lines',
+                        x: [...building.nodes.map(n => n.x), building.nodes[0].x],
+                        y: [...building.nodes.map(n => n.y), building.nodes[0].y],
+                        z: Array(building.nodes.length + 1).fill(building.height),
+                        line: {
+                            color: isDarkMode ? '#ffffff' : '#000000',
+                            width: 2
+                        },
+                        showlegend: false,
+                        hoverinfo: 'skip'
+                    };
+                    data.push(roofOutline);
+
+                    // Add building label
+                    const label = {
+                        type: 'scatter3d',
+                        mode: 'markers+text',
+                        x: [building.x],
+                        y: [building.y],
+                        z: [building.height + 5],
+                        text: [building.name],
+                        textposition: 'top center',
+                        textfont: {
+                            size: 12,
+                            color: textColor
+                        },
+                        marker: {
+                            size: 0
+                        },
+                        showlegend: false,
+                        hovertemplate: 
+                            '<b>%{text}</b><br>' +
+                            'Tipo: ' + building.type + '<br>' +
+                            'Altura: ' + building.height + 'm<br>' +
+                            'Posición: (' + building.x.toFixed(1) + ', ' + building.y.toFixed(1) + ')<br>' +
+                            '<extra></extra>'
+                    };
+                    data.push(label);
+                });
+            }
+
+            // Add legend for building types and paths
+            const buildingTypes = [...new Set(plotData.buildings?.map(b => b.type) || [])];
+            buildingTypes.forEach(type => {
+                const color = getBuildingColor(type, 10);
+                data.push({
                     type: 'mesh3d',
-                    x: [x-halfSize, x+halfSize, x+halfSize, x-halfSize, x-halfSize, x+halfSize, x+halfSize, x-halfSize],
-                    y: [y-halfSize, y-halfSize, y+halfSize, y+halfSize, y-halfSize, y-halfSize, y+halfSize, y+halfSize],
-                    z: [0, 0, 0, 0, height, height, height, height],
-                    i: [0, 0, 0, 0, 4, 4, 4, 4, 0, 1, 2, 3],
-                    j: [1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 0],
-                    k: [5, 6, 7, 7, 1, 2, 3, 3, 4, 5, 6, 7],
-                    color: `hsl(${Math.min(height * 2, 360)}, 70%, 50%)`,
+                    x: [0, 1, 0],
+                    y: [0, 0, 1],
+                    z: [0, 0, 0],
+                    i: [0],
+                    j: [1],
+                    k: [2],
+                    color: color,
                     opacity: 0.8,
-                    name: plotData.labels ? plotData.labels[i] : `Edificio ${i+1}`,
-                    showlegend: false,
-                    hovertemplate: 
-                        '<b>%{fullData.name}</b><br>' +
-                        'Altura: ' + height + 'm<br>' +
-                        'Posición: (' + x.toFixed(1) + ', ' + y.toFixed(1) + ')<br>' +
-                        '<extra></extra>'
-                };
-                
-                data.push(surfaceTrace);
-            }
-            
-            // Añadir marcadores en la cima de cada edificio con etiquetas
-            if (plotData.labels) {
-                const labelTrace = {
+                    flatshading: true,
+                    name: type.charAt(0).toUpperCase() + type.slice(1),
+                    showlegend: true
+                });
+            });
+
+            // Add path type to legend
+            if (plotData.paths && plotData.paths.length > 0) {
+                data.push({
                     type: 'scatter3d',
-                    mode: 'markers+text',
-                    x: plotData.x,
-                    y: plotData.y,
-                    z: plotData.heights.map(h => h + 10),
-                    text: plotData.labels,
-                    textposition: 'top center',
-                    textfont: {
-                        size: 12,
-                        color: '#000'
+                    mode: 'lines',
+                    x: [0, 1],
+                    y: [0, 0],
+                    z: [0, 0],
+                    line: {
+                        color: '#3498db',
+                        width: 4
                     },
-                    marker: {
-                        size: 8,
-                        color: plotData.colors || plotData.heights,
-                        colorscale: 'Viridis',
-                        showscale: true,
-                        colorbar: {
-                            title: 'Altura (m)',
-                            thickness: 20,
-                            len: 0.5
-                        }
-                    },
-                    name: 'Edificios',
-                    showlegend: false,
-                    hovertemplate: 
-                        '<b>%{text}</b><br>' +
-                        'Altura: %{marker.color:.1f}m<br>' +
-                        'Posición: (%{x:.1f}, %{y:.1f})<br>' +
-                        '<extra></extra>'
-                };
-                
-                data.push(labelTrace);
+                    name: 'Path',
+                    showlegend: true
+                });
             }
-            
-            // Añadir plano base
+
+            // Add base grid
             const maxRange = Math.max(
-                Math.max(...plotData.x) - Math.min(...plotData.x),
-                Math.max(...plotData.y) - Math.min(...plotData.y)
+                ...plotData.buildings.flatMap(b => b.nodes.map(n => Math.abs(n.x))),
+                ...plotData.buildings.flatMap(b => b.nodes.map(n => Math.abs(n.y)))
             );
-            const gridSize = Math.max(maxRange / 2, 200);
+            const gridSize = Math.max(maxRange * 1.2, 200);
             
             const gridTrace = {
                 type: 'mesh3d',
@@ -302,38 +1016,53 @@
                 i: [0, 0],
                 j: [1, 2],
                 k: [2, 3],
-                color: '#e0e0e0',
+                color: isDarkMode ? '#404040' : '#e0e0e0',
                 opacity: 0.3,
                 showlegend: false,
                 hoverinfo: 'skip'
             };
             
             data.push(gridTrace);
-            
-            // Configuración del layout
+
+            // Update layout configuration
             const layout = {
                 title: {
                     text: 'Vista 3D de Edificios - OpenStreetMap',
-                    font: { size: 24 }
+                    font: { 
+                        size: 24,
+                        color: textColor
+                    }
                 },
                 scene: {
                     xaxis: {
-                        title: 'Este-Oeste (metros)',
-                        gridcolor: '#bbb',
+                        title: {
+                            text: 'Este-Oeste (metros)',
+                            font: { color: textColor }
+                        },
+                        gridcolor: gridColor,
                         showbackground: true,
-                        backgroundcolor: '#f0f0f0'
+                        backgroundcolor: bgColor,
+                        tickfont: { color: textColor }
                     },
                     yaxis: {
-                        title: 'Norte-Sur (metros)',
-                        gridcolor: '#bbb',
+                        title: {
+                            text: 'Norte-Sur (metros)',
+                            font: { color: textColor }
+                        },
+                        gridcolor: gridColor,
                         showbackground: true,
-                        backgroundcolor: '#f0f0f0'
+                        backgroundcolor: bgColor,
+                        tickfont: { color: textColor }
                     },
                     zaxis: {
-                        title: 'Altura (metros)',
-                        gridcolor: '#bbb',
+                        title: {
+                            text: 'Altura (metros)',
+                            font: { color: textColor }
+                        },
+                        gridcolor: gridColor,
                         showbackground: true,
-                        backgroundcolor: '#f0f0f0'
+                        backgroundcolor: bgColor,
+                        tickfont: { color: textColor }
                     },
                     camera: {
                         eye: {
@@ -356,9 +1085,14 @@
                 },
                 autosize: true,
                 margin: { l: 0, r: 0, b: 0, t: 40 },
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)',
-                showlegend: false
+                paper_bgcolor: paperBgColor,
+                plot_bgcolor: paperBgColor,
+                showlegend: true,
+                legend: {
+                    font: { color: textColor },
+                    bgcolor: paperBgColor,
+                    bordercolor: isDarkMode ? '#404040' : '#e0e0e0'
+                }
             };
             
             const config = {
@@ -374,13 +1108,13 @@
                 }
             };
             
-            // Crear el gráfico
+            // Create the plot
             Plotly.newPlot('myDiv', data, layout, config);
             
-            // Auto-ajustar vista
+            // Auto-adjust view
             setTimeout(autoAdjustView, 100);
             
-            // Mostrar estadísticas
+            // Show statistics
             showStatistics();
         }
         
@@ -402,20 +1136,40 @@
         }
         
         function showStatistics() {
-            if (!plotData || !plotData.heights) return;
+            if (!plotData || !plotData.buildings) return;
             
-            const avgHeight = plotData.heights.reduce((a, b) => a + b, 0) / plotData.heights.length;
+            const buildings = plotData.buildings;
+            const avgHeight = buildings.reduce((a, b) => a + b.height, 0) / buildings.length;
+            const buildingTypes = [...new Set(buildings.map(b => b.type))];
+            
             const statsDiv = document.createElement('div');
-            statsDiv.style.cssText = 'margin: 20px auto; padding: 15px; background: #fff3cd; border-radius: 4px; max-width: 600px; text-align: center;';
-            statsDiv.innerHTML = `
-                <strong>Estadísticas:</strong><br>
-                Total edificios: ${plotData.x.length}<br>
-                Altura promedio: ${avgHeight.toFixed(1)}m<br>
-                Altura máxima: ${Math.max(...plotData.heights)}m<br>
-                Altura mínima: ${Math.min(...plotData.heights)}m
+            statsDiv.style.cssText = `
+                margin: 20px auto;
+                padding: 15px;
+                background: var(--stats-bg);
+                border-radius: 4px;
+                max-width: 600px;
+                text-align: center;
+                color: var(--stats-text);
+                border: 1px solid var(--border-color);
+                box-shadow: 0 2px 4px var(--shadow-color);
             `;
             
-            // Remover estadísticas anteriores
+            let typeStats = buildingTypes.map(type => {
+                const count = buildings.filter(b => b.type === type).length;
+                return `${type}: ${count}`;
+            }).join(' | ');
+            
+            statsDiv.innerHTML = `
+                <strong style="color: var(--stats-text);">Estadísticas:</strong><br>
+                Total edificios: <span style="color: var(--stats-text);">${buildings.length}</span><br>
+                Tipos de edificios: <span style="color: var(--stats-text);">${typeStats}</span><br>
+                Altura promedio: <span style="color: var(--stats-text);">${avgHeight.toFixed(1)}m</span><br>
+                Altura máxima: <span style="color: var(--stats-text);">${Math.max(...buildings.map(b => b.height))}m</span><br>
+                Altura mínima: <span style="color: var(--stats-text);">${Math.min(...buildings.map(b => b.height))}m</span>
+            `;
+            
+            // Remove previous statistics
             const existingStats = document.querySelector('.info .stats-summary');
             if (existingStats) existingStats.remove();
             
@@ -430,6 +1184,12 @@
                 'scene.camera': {
                     eye: { x: 1.5, y: -1.5, z: 1.2 },
                     center: { x: 0, y: 0, z: 0 }
+                },
+                'scene.camera.up': { x: 0, y: 0, z: 1 }
+            }, {
+                transition: {
+                    duration: 300,
+                    easing: 'cubic-in-out'
                 }
             });
         }
@@ -440,6 +1200,12 @@
                 'scene.camera': {
                     eye: { x: 0, y: 0, z: 2.5 },
                     center: { x: 0, y: 0, z: 0 }
+                },
+                'scene.camera.up': { x: 0, y: 1, z: 0 }
+            }, {
+                transition: {
+                    duration: 300,
+                    easing: 'cubic-in-out'
                 }
             });
         }
@@ -450,6 +1216,12 @@
                 'scene.camera': {
                     eye: { x: 2.5, y: 0, z: 0.5 },
                     center: { x: 0, y: 0, z: 0 }
+                },
+                'scene.camera.up': { x: 0, y: 0, z: 1 }
+            }, {
+                transition: {
+                    duration: 300,
+                    easing: 'cubic-in-out'
                 }
             });
         }
@@ -471,7 +1243,7 @@
             } else {
                 spinning = true;
                 spinInterval = setInterval(() => {
-                    currentAngle += 2;
+                    currentAngle += 4;
                     const radians = currentAngle * Math.PI / 180;
                     const distance = 2;
                     const height = 1.2;
@@ -483,20 +1255,20 @@
                             z: height
                         }
                     });
-                }, 50);
+                }, 30);
             }
         }
         
         function autoAdjustView() {
             if (typeof Plotly === 'undefined') return;
-            if (!plotData || !plotData.x || plotData.x.length === 0) return;
+            if (!plotData || !plotData.buildings || plotData.buildings.length === 0) return;
             
-            const xRange = Math.max(...plotData.x) - Math.min(...plotData.x);
-            const yRange = Math.max(...plotData.y) - Math.min(...plotData.y);
+            const xRange = Math.max(...plotData.buildings.map(b => Math.abs(b.x)));
+            const yRange = Math.max(...plotData.buildings.map(b => Math.abs(b.y)));
             const maxRange = Math.max(xRange, yRange);
             
-            // Ajustar la distancia de la cámara según el rango de datos
-            const cameraDistance = Math.max(maxRange / 200, 1);
+            // Adjust the distance of the camera based on the data range
+            const cameraDistance = Math.max(maxRange / 150, 1);
             
             Plotly.relayout('myDiv', {
                 'scene.camera.eye': {
@@ -504,10 +1276,58 @@
                     y: -cameraDistance * 1.5,
                     z: cameraDistance * 1.2
                 }
+            }, {
+                transition: {
+                    duration: 500,
+                    easing: 'cubic-in-out'
+                }
             });
         }
         
-        // Eventos de teclado
+        // Add zoom controls
+        function zoomIn() {
+            if (typeof Plotly === 'undefined') return;
+            const camera = document.querySelector('#myDiv').layout.scene.camera;
+            const currentDistance = Math.sqrt(
+                Math.pow(camera.eye.x, 2) +
+                Math.pow(camera.eye.y, 2) +
+                Math.pow(camera.eye.z, 2)
+            );
+            const zoomFactor = 0.7; // Zoom in by 30%
+            const newDistance = currentDistance * zoomFactor;
+            const ratio = newDistance / currentDistance;
+            
+            Plotly.relayout('myDiv', {
+                'scene.camera.eye': {
+                    x: camera.eye.x * ratio,
+                    y: camera.eye.y * ratio,
+                    z: camera.eye.z * ratio
+                }
+            });
+        }
+
+        function zoomOut() {
+            if (typeof Plotly === 'undefined') return;
+            const camera = document.querySelector('#myDiv').layout.scene.camera;
+            const currentDistance = Math.sqrt(
+                Math.pow(camera.eye.x, 2) +
+                Math.pow(camera.eye.y, 2) +
+                Math.pow(camera.eye.z, 2)
+            );
+            const zoomFactor = 1.3; // Zoom out by 30%
+            const newDistance = currentDistance * zoomFactor;
+            const ratio = newDistance / currentDistance;
+            
+            Plotly.relayout('myDiv', {
+                'scene.camera.eye': {
+                    x: camera.eye.x * ratio,
+                    y: camera.eye.y * ratio,
+                    z: camera.eye.z * ratio
+                }
+            });
+        }
+
+        // Update keyboard controls
         document.addEventListener('keydown', (e) => {
             switch(e.key.toLowerCase()) {
                 case 'r':
@@ -518,6 +1338,12 @@
                     break;
                 case 's':
                     sideView();
+                    break;
+                case '+':
+                    zoomIn();
+                    break;
+                case '-':
+                    zoomOut();
                     break;
                 case ' ':
                     e.preventDefault();
@@ -544,6 +1370,930 @@
             checkPlotlyAndInit();
         }
         
+        // Add theme toggle functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateGraphTheme();
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        // Add loading state to buttons
+        function setLoading(button, isLoading) {
+            if (isLoading) {
+                button.classList.add('loading');
+                button.disabled = true;
+            } else {
+                button.classList.remove('loading');
+                button.disabled = false;
+            }
+        }
+
+        // Modify loadData function to include loading state
+        const originalLoadData = loadData;
+        loadData = function() {
+            const button = document.querySelector('.load-btn');
+            setLoading(button, true);
+            originalLoadData();
+            setTimeout(() => setLoading(button, false), 1000);
+        };
+
+        // Add theme change listener to update graph colors
+        function updateGraphTheme() {
+            if (plotData) {
+                createVisualization();
+            }
+        }
+
+        // Replace the coordinate parsing functions with new ones
+        function parseCoordinateString(input) {
+            console.log('Parsing coordinate string:', input);
+            
+            if (!input || typeof input !== 'string') {
+                console.error('Invalid input type:', typeof input);
+                return null;
+            }
+
+            // Remove any extra spaces and split by common delimiters
+            const cleanInput = input.trim()
+                .replace(/\s*,\s*/g, ',') // Remove spaces around commas
+                .replace(/\s+/g, ' ');    // Normalize spaces
+
+            console.log('Cleaned input:', cleanInput);
+
+            // Try different parsing methods
+            let parts;
+            
+            // Try comma-separated format
+            if (cleanInput.includes(',')) {
+                parts = cleanInput.split(',').map(p => p.trim());
+                console.log('Split by comma:', parts);
+            } 
+            // Try space-separated format
+            else {
+                parts = cleanInput.split(/\s+/);
+                console.log('Split by space:', parts);
+            }
+
+            if (!parts || parts.length !== 3) {
+                console.error('Invalid number of parts:', parts ? parts.length : 'null');
+                return null;
+            }
+
+            try {
+                const [lat, lon, height] = parts.map(val => {
+                    const num = parseFloat(val);
+                    console.log('Parsing value:', val, '->', num);
+                    return num;
+                });
+
+                console.log('Parsed values:', { lat, lon, height });
+
+                // Validate numbers
+                if (isNaN(lat) || isNaN(lon) || isNaN(height)) {
+                    console.error('Invalid numbers in coordinates:', { lat, lon, height });
+                    return null;
+                }
+
+                // Validate ranges
+                if (lat < -90 || lat > 90) {
+                    console.error('Latitude out of range (-90 to 90):', lat);
+                    return null;
+                }
+                if (lon < -180 || lon > 180) {
+                    console.error('Longitude out of range (-180 to 180):', lon);
+                    return null;
+                }
+                if (height < 0) {
+                    console.error('Height must be positive:', height);
+                    return null;
+                }
+
+                return { lat, lon, height };
+            } catch (e) {
+                console.error('Error parsing coordinate:', e);
+                return null;
+            }
+        }
+
+        function showFeedback(message, type = 'info') {
+            console.log('Showing feedback:', { message, type });
+            const feedbackDiv = document.getElementById('feedbackMessage');
+            if (!feedbackDiv) {
+                console.error('Feedback div not found');
+                return;
+            }
+            
+            // Clear any existing feedback
+            feedbackDiv.className = 'feedback-message';
+            feedbackDiv.textContent = '';
+            
+            // Force a reflow
+            void feedbackDiv.offsetWidth;
+            
+            // Add the new feedback
+            feedbackDiv.textContent = message;
+            feedbackDiv.className = `feedback-message feedback-${type} visible`;
+            
+            // Make sure the feedback is visible
+            feedbackDiv.style.display = 'block';
+            feedbackDiv.style.opacity = '1';
+            
+            // Log the feedback element state
+            console.log('Feedback element state:', {
+                display: feedbackDiv.style.display,
+                opacity: feedbackDiv.style.opacity,
+                className: feedbackDiv.className,
+                textContent: feedbackDiv.textContent
+            });
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                feedbackDiv.style.opacity = '0';
+                setTimeout(() => {
+                    feedbackDiv.style.display = 'none';
+                }, 300);
+            }, 5000);
+        }
+
+        function updateLineOfSightInfo(start, end, hasIntersection) {
+            const infoDiv = document.getElementById('lineOfSightInfo');
+            const distance = calculateDistance(start, end);
+            const angle = calculateAngle(start, end);
+            
+            infoDiv.innerHTML = `
+                <strong>Información de la línea:</strong><br>
+                Distancia: ${distance.toFixed(2)}m<br>
+                Ángulo: ${angle.toFixed(1)}°<br>
+                Estado: ${hasIntersection ? '❌ Obstruida' : '✅ Libre'}
+            `;
+        }
+
+        function calculateDistance(start, end) {
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const dz = end.z - start.z;
+            return Math.sqrt(dx * dx + dy * dy + dz * dz);
+        }
+
+        function calculateAngle(start, end) {
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const dz = end.z - start.z;
+            const horizontalDistance = Math.sqrt(dx * dx + dy * dy);
+            return Math.atan2(dz, horizontalDistance) * (180 / Math.PI);
+        }
+
+        function checkLineOfSightFromFields() {
+            console.log('=== Starting Line of Sight Check ===');
+            
+            // Check if building data is loaded
+            if (!plotData || !plotData.buildings) {
+                console.error('No building data available');
+                showFeedback('Por favor, carga los datos de edificios primero.', 'error');
+                return;
+            }
+            console.log('Building data is available:', {
+                buildingsCount: plotData.buildings.length,
+                center: plotData.center
+            });
+
+            // Get input values
+            const startInput = document.getElementById('startCoordinates');
+            const endInput = document.getElementById('endCoordinates');
+            
+            if (!startInput || !endInput) {
+                console.error('Input elements not found:', {
+                    startInput: !!startInput,
+                    endInput: !!endInput
+                });
+                showFeedback('Error: No se encontraron los campos de entrada.', 'error');
+                return;
+            }
+
+            const startValue = startInput.value.trim();
+            const endValue = endInput.value.trim();
+
+            console.log('Input values:', {
+                start: startValue,
+                end: endValue
+            });
+
+            // Validate input values are not empty
+            if (!startValue || !endValue) {
+                console.error('Empty input values');
+                showFeedback('Por favor, ingresa ambos puntos (inicial y final).', 'error');
+                return;
+            }
+
+            // Clear previous error messages and traces
+            document.getElementById('startError').classList.remove('visible');
+            document.getElementById('endError').classList.remove('visible');
+            
+            try {
+                // Check if Plotly is available
+                if (typeof Plotly === 'undefined') {
+                    console.error('Plotly is not defined');
+                    showFeedback('Error: Plotly no está disponible.', 'error');
+                    return;
+                }
+
+                // Check if the plot div exists
+                const plotDiv = document.getElementById('myDiv');
+                if (!plotDiv) {
+                    console.error('Plot div not found');
+                    showFeedback('Error: No se encontró el contenedor del gráfico.', 'error');
+                    return;
+                }
+
+                console.log('Plot div found, current traces:', plotDiv.data ? plotDiv.data.length : 0);
+
+                // Check if there are any traces to delete
+                const currentTraces = plotDiv.data || [];
+                console.log('Current traces before deletion:', currentTraces.length);
+                
+                if (currentTraces.length > 0) {
+                    Plotly.deleteTraces('myDiv', [-1, -2, -3])
+                        .then(() => console.log('Previous traces deleted successfully'))
+                        .catch(err => console.log('No previous traces to delete or error:', err));
+                }
+            } catch (e) {
+                console.log('Error during trace cleanup:', e);
+            }
+
+            // Parse coordinates
+            console.log('Parsing start coordinates...');
+            const start = parseCoordinateString(startValue);
+            console.log('Parsing end coordinates...');
+            const end = parseCoordinateString(endValue);
+
+            console.log('Parsed coordinates:', { start, end });
+
+            // Validate parsed coordinates
+            if (!start || !end) {
+                console.error('Failed to parse coordinates');
+                if (!start) {
+                    document.getElementById('startError').textContent = 'Formato inválido. Use: lat, lon, altura';
+                    document.getElementById('startError').classList.add('visible');
+                }
+                if (!end) {
+                    document.getElementById('endError').textContent = 'Formato inválido. Use: lat, lon, altura';
+                    document.getElementById('endError').classList.add('visible');
+                }
+                showFeedback('Error en las coordenadas. Verifica el formato.', 'error');
+                return;
+            }
+
+            // Convert coordinates to meters
+            console.log('Converting coordinates to meters...');
+            const startMeters = convertToMeters(start.lat, start.lon, start.height);
+            const endMeters = convertToMeters(end.lat, end.lon, end.height);
+
+            console.log('Converted coordinates:', {
+                start: startMeters,
+                end: endMeters
+            });
+
+            // Validate converted coordinates
+            if (!startMeters || !endMeters) {
+                console.error('Failed to convert coordinates to meters');
+                showFeedback('Error al convertir las coordenadas. Verifica que los valores sean válidos.', 'error');
+                return;
+            }
+
+            // Validate coordinate ranges
+            if (Math.abs(startMeters.x) > 10000 || Math.abs(startMeters.y) > 10000 || 
+                Math.abs(endMeters.x) > 10000 || Math.abs(endMeters.y) > 10000) {
+                console.error('Coordinates out of reasonable range');
+                showFeedback('Las coordenadas están muy lejos del centro. Intenta con puntos más cercanos.', 'error');
+                return;
+            }
+
+            // Check for intersections
+            console.log('Checking for intersections...');
+            const hasIntersection = checkBuildingIntersections(startMeters, endMeters);
+            console.log('Intersection result:', hasIntersection);
+
+            // Update visualization
+            console.log('Updating visualization...');
+            updateLineOfSight(startMeters, endMeters, hasIntersection);
+            
+            // Show feedback message
+            if (hasIntersection) {
+                showFeedback('❌ La línea de vista está obstruida por edificios.', 'error');
+            } else {
+                showFeedback('✅ La línea de vista está libre.', 'success');
+            }
+
+            // Update line of sight info
+            updateLineOfSightInfo(startMeters, endMeters, hasIntersection);
+            console.log('=== Line of Sight Check Complete ===');
+        }
+
+        function convertToMeters(lat, lon, height) {
+            if (!centerCoords) {
+                console.error('Center coordinates not set');
+                return null;
+            }
+
+            try {
+                // Validate input values
+                if (typeof lat !== 'number' || typeof lon !== 'number' || typeof height !== 'number') {
+                    console.error('Invalid input types:', { lat, lon, height });
+                    return null;
+                }
+
+                if (isNaN(lat) || isNaN(lon) || isNaN(height)) {
+                    console.error('NaN values in coordinates:', { lat, lon, height });
+                    return null;
+                }
+
+                // Convert lat/lon to meters relative to center
+                const x = (lon - centerCoords.lon) * 111320 * Math.cos(centerCoords.lat * Math.PI / 180);
+                const y = (lat - centerCoords.lat) * 111320;
+                const z = height;
+
+                console.log('Converting coordinates:', {
+                    input: { lat, lon, height },
+                    center: centerCoords,
+                    output: { x, y, z }
+                });
+
+                // Validate output values
+                if (isNaN(x) || isNaN(y) || isNaN(z)) {
+                    console.error('NaN values in converted coordinates:', { x, y, z });
+                    return null;
+                }
+
+                return { x, y, z };
+            } catch (error) {
+                console.error('Error converting coordinates:', error);
+                return null;
+            }
+        }
+
+        function updateLineOfSight(start, end, hasIntersection) {
+            console.log('Updating line of sight visualization:', { start, end, hasIntersection });
+            
+            if (!plotData) {
+                console.error('No plot data available');
+                return;
+            }
+
+            // Validate input points
+            if (!start || !end || 
+                typeof start.x !== 'number' || typeof start.y !== 'number' || typeof start.z !== 'number' ||
+                typeof end.x !== 'number' || typeof end.y !== 'number' || typeof end.z !== 'number') {
+                console.error('Invalid input points:', { start, end });
+                showFeedback('Error: Coordenadas inválidas.', 'error');
+                return;
+            }
+
+            try {
+                // Check if Plotly is available
+                if (typeof Plotly === 'undefined') {
+                    console.error('Plotly is not defined');
+                    showFeedback('Error: Plotly no está disponible.', 'error');
+                    return;
+                }
+
+                // Check if the plot div exists and has data
+                const plotDiv = document.getElementById('myDiv');
+                if (!plotDiv || !plotDiv.data) {
+                    console.error('Plot div not found or has no data');
+                    showFeedback('Error: No se encontró el gráfico o no tiene datos.', 'error');
+                    return;
+                }
+
+                // Get current theme colors
+                const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+                const textColor = isDarkMode ? '#ffffff' : '#2c3e50';
+                const gridColor = isDarkMode ? '#404040' : '#bbb';
+                const bgColor = isDarkMode ? '#2d2d2d' : '#f0f0f0';
+                const paperBgColor = isDarkMode ? '#1a1a1a' : '#ffffff';
+
+                // Get current traces, excluding any previous line of sight traces
+                const currentTraces = plotDiv.data.filter(trace => 
+                    !trace.name?.includes('Línea de Vista') && 
+                    !trace.name?.includes('Punto Inicial') && 
+                    !trace.name?.includes('Punto Final') &&
+                    !trace.name?.includes('Distancia:')
+                );
+
+                // Calculate the new center point between start and end
+                const centerX = (start.x + end.x) / 2;
+                const centerY = (start.y + end.y) / 2;
+                const centerZ = (start.z + end.z) / 2;
+
+                // Calculate the distance between points
+                const dx = end.x - start.x;
+                const dy = end.y - start.y;
+                const dz = end.z - start.z;
+                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                // Calculate the camera distance based on the points distance and building data
+                const maxBuildingHeight = Math.max(...plotData.buildings.map(b => b.height));
+                const maxBuildingRange = Math.max(
+                    ...plotData.buildings.flatMap(b => b.nodes.map(n => Math.abs(n.x))),
+                    ...plotData.buildings.flatMap(b => b.nodes.map(n => Math.abs(n.y)))
+                );
+                const cameraDistance = Math.max(
+                    distance * 1.5,
+                    maxBuildingRange * 1.2,
+                    maxBuildingHeight * 2,
+                    100
+                );
+
+                // Calculate the direction vector from start to end
+                const dirX = dx / distance;
+                const dirY = dy / distance;
+                const dirZ = dz / distance;
+
+                // Calculate perpendicular vector for camera position
+                const perpX = -dirY;
+                const perpY = dirX;
+                const perpZ = 0.5;
+
+                // Normalize the perpendicular vector
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY + perpZ * perpZ);
+                const normPerpX = perpX / perpLength;
+                const normPerpY = perpY / perpLength;
+                const normPerpZ = perpZ / perpLength;
+
+                // Format coordinates for display
+                const formatCoord = (x, y, z) => 
+                    `(${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`;
+
+                // Create the line trace with enhanced legend information
+                const lineTrace = {
+                    type: 'scatter3d',
+                    mode: 'lines',
+                    x: [start.x, end.x],
+                    y: [start.y, end.y],
+                    z: [start.z, end.z],
+                    line: {
+                        color: hasIntersection ? '#e74c3c' : '#2ecc71',
+                        width: 8,
+                        dash: 'solid'
+                    },
+                    name: `Línea de Vista ${hasIntersection ? '(Obstruida)' : '(Libre)'}`,
+                    showlegend: true,
+                    legendgroup: 'lineOfSight',
+                    hoverinfo: 'text',
+                    text: [
+                        `Inicio ${formatCoord(start.x, start.y, start.z)}`,
+                        `Fin ${formatCoord(end.x, end.y, end.z)}`
+                    ]
+                };
+
+                // Create start point with enhanced legend information
+                const startPoint = {
+                    type: 'scatter3d',
+                    mode: 'markers',
+                    x: [start.x],
+                    y: [start.y],
+                    z: [start.z],
+                    marker: {
+                        size: 12,
+                        color: '#3498db',
+                        symbol: 'circle',
+                        line: {
+                            color: '#ffffff',
+                            width: 2
+                        }
+                    },
+                    name: `Punto Inicial ${formatCoord(start.x, start.y, start.z)}`,
+                    showlegend: true,
+                    legendgroup: 'lineOfSight',
+                    hoverinfo: 'text',
+                    text: [`Inicio ${formatCoord(start.x, start.y, start.z)}`]
+                };
+
+                // Create end point with enhanced legend information
+                const endPoint = {
+                    type: 'scatter3d',
+                    mode: 'markers',
+                    x: [end.x],
+                    y: [end.y],
+                    z: [end.z],
+                    marker: {
+                        size: 12,
+                        color: '#e74c3c',
+                        symbol: 'circle',
+                        line: {
+                            color: '#ffffff',
+                            width: 2
+                        }
+                    },
+                    name: `Punto Final ${formatCoord(end.x, end.y, end.z)}`,
+                    showlegend: true,
+                    legendgroup: 'lineOfSight',
+                    hoverinfo: 'text',
+                    text: [`Fin ${formatCoord(end.x, end.y, end.z)}`]
+                };
+
+                // Add a distance indicator to the legend
+                const distanceTrace = {
+                    type: 'scatter3d',
+                    mode: 'none',
+                    x: [null],
+                    y: [null],
+                    z: [null],
+                    name: `Distancia: ${distance.toFixed(1)}m`,
+                    showlegend: true,
+                    legendgroup: 'lineOfSight',
+                    hoverinfo: 'skip'
+                };
+
+                // Combine existing traces with new line of sight traces
+                const allTraces = [...currentTraces, lineTrace, startPoint, endPoint, distanceTrace];
+
+                // Create new layout preserving theme settings
+                const newLayout = {
+                    ...plotDiv.layout,
+                    scene: {
+                        ...plotDiv.layout.scene,
+                        camera: {
+                            eye: {
+                                x: centerX + normPerpX * cameraDistance,
+                                y: centerY + normPerpY * cameraDistance,
+                                z: centerZ + normPerpZ * cameraDistance
+                            },
+                            center: {
+                                x: centerX,
+                                y: centerY,
+                                z: centerZ
+                            },
+                            up: { x: 0, y: 0, z: 1 }
+                        }
+                    }
+                };
+
+                // Update the plot with all traces and preserved layout
+                Plotly.react('myDiv', allTraces, newLayout, {
+                    transition: {
+                        duration: 500,
+                        easing: 'cubic-in-out'
+                    }
+                }).then(() => {
+                    console.log('Plot updated successfully');
+                    // Show feedback message
+                    if (hasIntersection) {
+                        showFeedback('❌ La línea de vista está obstruida por edificios.', 'error');
+                    } else {
+                        showFeedback('✅ La línea de vista está libre.', 'success');
+                    }
+                }).catch(err => {
+                    console.error('Error updating plot:', err);
+                    showFeedback('Error al actualizar la visualización.', 'error');
+                });
+
+            } catch (error) {
+                console.error('Error updating line of sight:', error);
+                showFeedback('Error al actualizar la visualización.', 'error');
+            }
+        }
+
+        function fillExampleCoordinates() {
+            document.getElementById('startCoordinates').value = '25.654627, -100.326208, 10.5';
+            document.getElementById('endCoordinates').value = '25.6479154, -100.3282983, 5.5';
+        }
+
+        // Add input validation for both fields
+        ['startCoordinates', 'endCoordinates'].forEach(id => {
+            const input = document.getElementById(id);
+            if (!input) {
+                console.error(`Input element ${id} not found`);
+                return;
+            }
+            
+            console.log(`Setting up input validation for ${id}`);
+            
+            input.addEventListener('input', function(e) {
+                console.log(`Input event for ${id}:`, e.target.value);
+                // Allow numbers, commas, spaces, decimal points, and minus signs
+                const value = e.target.value;
+                const validValue = value.replace(/[^0-9\s,.-]/g, '')
+                    .replace(/(\d*\.\d*)\./g, '$1'); // Remove extra decimal points
+                if (value !== validValue) {
+                    console.log(`Cleaned input for ${id}:`, validValue);
+                    e.target.value = validValue;
+                }
+                // Clear error message when user types
+                const errorDiv = document.getElementById(id + 'Error');
+                if (errorDiv) {
+                    errorDiv.classList.remove('visible');
+                }
+                const feedbackDiv = document.getElementById('feedbackMessage');
+                if (feedbackDiv) {
+                    feedbackDiv.classList.remove('visible');
+                }
+            });
+
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    console.log(`Enter pressed for ${id}`);
+                    e.preventDefault();
+                    checkLineOfSightFromFields();
+                }
+            });
+
+            // Add change event listener
+            input.addEventListener('change', function(e) {
+                console.log(`Change event for ${id}:`, e.target.value);
+            });
+        });
+
+        // Add a test function to verify the input fields
+        function testInputFields() {
+            console.log('=== Testing Input Fields ===');
+            const startInput = document.getElementById('startCoordinates');
+            const endInput = document.getElementById('endCoordinates');
+            
+            console.log('Input elements found:', {
+                start: !!startInput,
+                end: !!endInput
+            });
+
+            if (startInput && endInput) {
+                console.log('Current input values:', {
+                    start: startInput.value,
+                    end: endInput.value
+                });
+                
+                // Test coordinate parsing
+                const testCoords = '25.654627, -100.326208, 10.5';
+                console.log('Testing coordinate parsing with:', testCoords);
+                const parsed = parseCoordinateString(testCoords);
+                console.log('Parse result:', parsed);
+            }
+        }
+
+        // Call test function when page loads
+        window.addEventListener('load', function() {
+            console.log('Page loaded, testing input fields...');
+            testInputFields();
+        });
+
+        // Add new function to load test data
+        function loadTestData() {
+            console.log('Loading test data...');
+            
+            // Set the coordinates
+            document.getElementById('startCoordinates').value = '25.654627, -100.326208, 10.5';
+            document.getElementById('endCoordinates').value = '25.6479154, -100.3282983, 5.5';
+            
+            // Set the building data (simplified version)
+            const testData = {
+                "version": 0.6,
+                "generator": "Overpass API",
+                "elements": [
+                    {
+                        "type": "way",
+                        "id": 433352635,
+                        "nodes": [4321613871, 4321613872, 4321613873, 4321618792, 4321613874, 4321613871],
+                        "tags": {"building": "yes"}
+                    },
+                    {
+                        "type": "node",
+                        "id": 4321613871,
+                        "lat": 25.6510584,
+                        "lon": -100.3285616
+                    },
+                    {
+                        "type": "node",
+                        "id": 4321613872,
+                        "lat": 25.6506480,
+                        "lon": -100.3285900
+                    },
+                    {
+                        "type": "node",
+                        "id": 4321613873,
+                        "lat": 25.6506186,
+                        "lon": -100.3282648
+                    },
+                    {
+                        "type": "node",
+                        "id": 4321613874,
+                        "lat": 25.6510254,
+                        "lon": -100.3282363
+                    },
+                    {
+                        "type": "node",
+                        "id": 4321618792,
+                        "lat": 25.6506956,
+                        "lon": -100.3282594
+                    }
+                ]
+            };
+            
+            document.getElementById('dataInput').value = JSON.stringify(testData, null, 2);
+            
+            // Load the data
+            loadData();
+            
+            // Show feedback
+            showFeedback('✅ Datos de prueba cargados correctamente.', 'success');
+            
+            // After a short delay, check the line of sight
+            setTimeout(() => {
+                checkLineOfSightFromFields();
+            }, 1000);
+        }
+
+        // Add click event listener to the check button
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkButton = document.querySelector('.check-btn');
+            if (checkButton) {
+                console.log('Check button found, adding click listener');
+                checkButton.addEventListener('click', function(e) {
+                    console.log('Check button clicked');
+                    e.preventDefault();
+                    checkLineOfSightFromFields();
+                });
+            } else {
+                console.error('Check button not found in DOM');
+            }
+        });
+
+        function checkBuildingIntersections(start, end) {
+            console.log('Checking building intersections:', { start, end });
+            
+            if (!plotData || !plotData.buildings) {
+                console.error('No building data available for intersection check');
+                return false;
+            }
+
+            // Calculate the direction vector of the line
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const dz = end.z - start.z;
+            const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            
+            // Normalize the direction vector
+            const dirX = dx / length;
+            const dirY = dy / length;
+            const dirZ = dz / length;
+
+            // Check each building for intersection
+            for (const building of plotData.buildings) {
+                console.log('Checking building:', building.name);
+                
+                // Get building vertices
+                const vertices = building.nodes;
+                if (!vertices || vertices.length < 3) {
+                    console.log('Skipping building with insufficient vertices:', building.name);
+                    continue;
+                }
+
+                // Check each wall of the building
+                for (let i = 0; i < vertices.length; i++) {
+                    const v1 = vertices[i];
+                    const v2 = vertices[(i + 1) % vertices.length];
+                    
+                    // Create a wall by extruding the vertices to the building height
+                    const wall = {
+                        bottom: [
+                            { x: v1.x, y: v1.y, z: 0 },
+                            { x: v2.x, y: v2.y, z: 0 }
+                        ],
+                        top: [
+                            { x: v1.x, y: v1.y, z: building.height },
+                            { x: v2.x, y: v2.y, z: building.height }
+                        ]
+                    };
+
+                    // Check if the line intersects with the wall
+                    if (checkLineWallIntersection(start, end, wall)) {
+                        console.log('Intersection found with building:', building.name);
+                        return true;
+                    }
+                }
+            }
+
+            console.log('No intersections found');
+            return false;
+        }
+
+        function checkLineWallIntersection(start, end, wall) {
+            // Check if the line intersects with any of the wall's faces
+            // A wall has 4 faces: front, back, top, and bottom
+
+            // Check if the line intersects with the front face
+            if (checkLineFaceIntersection(start, end, [
+                wall.bottom[0], wall.bottom[1], wall.top[1], wall.top[0]
+            ])) {
+                return true;
+            }
+
+            // Check if the line intersects with the back face
+            if (checkLineFaceIntersection(start, end, [
+                wall.bottom[1], wall.bottom[0], wall.top[0], wall.top[1]
+            ])) {
+                return true;
+            }
+
+            // Check if the line intersects with the top face
+            if (checkLineFaceIntersection(start, end, [
+                wall.top[0], wall.top[1], wall.top[1], wall.top[0]
+            ])) {
+                return true;
+            }
+
+            // Check if the line intersects with the bottom face
+            if (checkLineFaceIntersection(start, end, [
+                wall.bottom[0], wall.bottom[1], wall.bottom[1], wall.bottom[0]
+            ])) {
+                return true;
+            }
+
+            return false;
+        }
+
+        function checkLineFaceIntersection(start, end, face) {
+            // Convert the face vertices to a plane equation
+            const p1 = face[0];
+            const p2 = face[1];
+            const p3 = face[2];
+
+            // Calculate the plane normal
+            const v1 = {
+                x: p2.x - p1.x,
+                y: p2.y - p1.y,
+                z: p2.z - p1.z
+            };
+            const v2 = {
+                x: p3.x - p1.x,
+                y: p3.y - p1.y,
+                z: p3.z - p1.z
+            };
+
+            const normal = {
+                x: v1.y * v2.z - v1.z * v2.y,
+                y: v1.z * v2.x - v1.x * v2.z,
+                z: v1.x * v2.y - v1.y * v2.x
+            };
+
+            // Normalize the normal vector
+            const length = Math.sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+            normal.x /= length;
+            normal.y /= length;
+            normal.z /= length;
+
+            // Calculate the plane equation: ax + by + cz + d = 0
+            const d = -(normal.x * p1.x + normal.y * p1.y + normal.z * p1.z);
+
+            // Calculate the line-plane intersection
+            const lineDir = {
+                x: end.x - start.x,
+                y: end.y - start.y,
+                z: end.z - start.z
+            };
+
+            const denominator = normal.x * lineDir.x + normal.y * lineDir.y + normal.z * lineDir.z;
+            
+            // If the line is parallel to the plane, there's no intersection
+            if (Math.abs(denominator) < 1e-10) {
+                return false;
+            }
+
+            const t = -(normal.x * start.x + normal.y * start.y + normal.z * start.z + d) / denominator;
+            
+            // If the intersection is behind the start point or beyond the end point, there's no intersection
+            if (t < 0 || t > 1) {
+                return false;
+            }
+
+            // Calculate the intersection point
+            const intersection = {
+                x: start.x + t * lineDir.x,
+                y: start.y + t * lineDir.y,
+                z: start.z + t * lineDir.z
+            };
+
+            // Check if the intersection point is inside the face
+            return isPointInPolygon(intersection, face);
+        }
+
+        function isPointInPolygon(point, polygon) {
+            // Ray casting algorithm to check if a point is inside a polygon
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                const xi = polygon[i].x, yi = polygon[i].y;
+                const xj = polygon[j].x, yj = polygon[j].y;
+                
+                const intersect = ((yi > point.y) !== (yj > point.y))
+                    && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
     </script>
 </body>
 </html>
